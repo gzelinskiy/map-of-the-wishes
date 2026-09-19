@@ -1,66 +1,66 @@
-# Небо побажань
+# Wish Sky (Небо побажань)
 
-Приватний сайт-сховище щоденних «доброго ранку» й «добраніч». React-фронт, Fastify-бекенд з файловим сховищем (без БД), Telegram-бот як адмінка.
+A private archive website for daily "good morning" and "good night" wishes. React frontend, Fastify backend with file-based storage (no external database), and a Telegram bot as the admin interface.
 
 ```
-apps/web        Vite + React SPA (мобільний пріоритет)
-apps/server     Fastify API + grammY бот в одному процесі
-packages/shared типи, дати, формат файлів
+apps/web        Vite + React SPA (mobile-first)
+apps/server     Fastify API + grammY bot in a single process
+packages/shared types, dates, file format
 scripts/        import-oksana.ts, make-key.ts
-deploy/         Docker, Caddy, бекап
-design/         еталонні макети (для звірки вигляду)
-data/           ← побажання й ключі доступу (поза git!)
+deploy/         Docker, Caddy, backup script
+design/         reference design mockups (visual comparison)
+data/           ← wishes and access keys (excluded from git!)
 ```
 
-## Швидкий старт (розробка)
+## Quickstart (Development)
 
 ```bash
 npm install
-cp .env.example .env            # COOKIE_SECRET ≥ 16 символів; PUBLIC_URL=http://localhost:5173
-npm run import -- ~/Oksana      # одноразово: 149 файлів → data/wishes/
-node --env-file=.env node_modules/.bin/tsx scripts/make-key.ts "dev"   # друкує /unlock?k=… посилання
-npm run dev:server              # :3000 (бот стартує лише якщо задано BOT_TOKEN + ADMIN_TELEGRAM_ID)
-npm run dev:web                 # :5173, проксі /api і /unlock на :3000
+cp .env.example .env            # COOKIE_SECRET ≥ 16 characters; PUBLIC_URL=http://localhost:5173
+npm run import -- ~/Oksana      # one-off: 149 files → data/wishes/
+node --env-file=.env node_modules/.bin/tsx scripts/make-key.ts "dev"   # prints /unlock?k=… link
+npm run dev:server              # :3000 (bot only starts if BOT_TOKEN + ADMIN_TELEGRAM_ID are set)
+npm run dev:web                 # :5173, proxies /api and /unlock to :3000
 ```
-Відкрий надруковане посилання — отримаєш cookie й побачиш сайт. `npm test` — усі тести; `npm run build` — типізація + збірка.
+Open the printed link — you will receive a session cookie and see the site. Run `npm test` for all tests; `npm run build` for type checking + production build.
 
-## Як працює доступ без логіна
+## How Passwordless Access Works
 
-1. Ти в боті: `/link Ксюша` → отримуєш `https://домен/unlock?k=<довгий секрет>`.
-2. Вона відкриває посилання раз → сервер перевіряє секрет і ставить підписану `HttpOnly` cookie на рік.
-3. Далі сайт відкривається сам, нічого вводити не треба. Без cookie `/api/*` віддає 401, а сайт показує «Це небо — лише для тебе».
-4. Втратила телефон / почистила cookie → `/link` ще раз. Старий ключ: `/revoke <id>` (діє миттєво).
+1. You run `/link Ksusha` in the bot → receive `https://domain/unlock?k=<long secret>`.
+2. She opens the link once → the server verifies the secret and sets a signed `HttpOnly` cookie for 1 year.
+3. Subsequent visits open the site directly without requiring any login credentials. Without the cookie, `/api/*` responds with 401, and the website shows "This sky is just for you" ("Це небо — лише для тебе").
+4. Lost phone / cleared cookies → run `/link` again. Revoke an old key: `/revoke <id>` (takes effect immediately).
 
-У `data/access/keys.json` зберігаються лише SHA-256 хеші. Сайт закритий від пошуковиків (`X-Robots-Tag`, `robots.txt`, `<meta robots>`).
+`data/access/keys.json` stores **only SHA-256 hashes**. The website is hidden from search engines (`X-Robots-Tag`, `robots.txt`, `<meta robots>`).
 
-## Бот (лише `ADMIN_TELEGRAM_ID`; усім іншим — тиша)
+## Telegram Bot (Only `ADMIN_TELEGRAM_ID`; silent to everyone else)
 
-Надішли боту текст → кнопки **🌙 Ніч / ☀️ Ранок / 📅 Інша дата**. Перезапис існуючого дня — завжди з підтвердженням і показом старого тексту.
+Send any wish text to the bot → action buttons: **🌙 Night / ☀️ Morning / 📅 Another date**. Overwriting an existing date always requires confirmation and displays the previous text.
 
-| Команда | Що робить |
+| Command | Action |
 |---|---|
-| `/gn [дата]`, `/gm [дата]` | наступний текст піде як добраніч / добрий ранок на цю дату |
-| `/get gn 2026-09-19` | показати; кнопки «Змінити» / «Видалити» |
-| `/del gn 2026-09-19` | видалити (з підтвердженням) |
-| `/gaps`, `/stats` | пропущені дні; кількості |
-| `/link [підпис]`, `/links`, `/revoke id` | ключі доступу |
+| `/gn [date]`, `/gm [date]` | the next sent text will be saved as good night / good morning for this date |
+| `/get gn 2026-09-19` | show wish; buttons: "Edit" / "Delete" |
+| `/del gn 2026-09-19` | delete (with confirmation) |
+| `/gaps`, `/stats` | missing dates; counts & statistics |
+| `/link [label]`, `/links`, `/revoke id` | manage access keys |
 
-Дата: `2026-09-19`, `19.09`, `19.09.2026`, `сьогодні`, `вчора`. Для ночі до 05:00 «сьогодні» = попередній день (Київ).
+Supported date formats: `2026-09-19`, `19.09`, `19.09.2026`, `сьогодні` (today), `вчора` (yesterday). For night wishes before 05:00, "today" resolves to the previous calendar day (Kyiv timezone).
 
-## Деплой (один VPS)
+## Deployment (Single VPS)
 
 ```bash
-cp .env.example .env            # BOT_TOKEN, ADMIN_TELEGRAM_ID, COOKIE_SECRET, PUBLIC_URL=https://твій.домен
+cp .env.example .env            # BOT_TOKEN, ADMIN_TELEGRAM_ID, COOKIE_SECRET, PUBLIC_URL=https://your.domain
 mkdir -p data && chown 1000:1000 data
-# скопіюй свою data/ (або запусти імпорт), DNS домену → на VPS
-SITE_ADDRESS=твій.домен docker compose -f deploy/docker-compose.yml up -d --build
+# copy your data/ (or run the import script), point DNS of your domain → VPS
+SITE_ADDRESS=your.domain docker compose -f deploy/docker-compose.yml up -d --build
 ```
-Caddy сам отримує TLS. Локальна перевірка стеку без домену:
+Caddy automatically provisions TLS certificates. Local stack verification without a custom domain:
 `HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml up -d --build` → http://localhost:8080.
 
-**Бекап:** `deploy/backup.sh` (cron `15 4 * * *`) робить `backups/nebo-YYYY-MM-DD.tar.gz` і тримає 30 останніх. `data/` навмисно не в git — це особисті тексти; за бажання зроби з неї окремий приватний репозиторій.
+**Backups:** `deploy/backup.sh` (cron `15 4 * * *`) archives to `backups/nebo-YYYY-MM-DD.tar.gz` and keeps the last 30 daily archives. `data/` is deliberately omitted from git as it contains personal messages; you may store it in a separate private repository if needed.
 
-## Формат даних
+## Data Format
 
 `data/wishes/{night|morning}/YYYY-MM-DD.md`:
 ```markdown
@@ -69,12 +69,12 @@ date: 2026-08-01
 type: night
 updatedAt: 2026-09-19T21:30:00.000Z
 ---
-Перший абзац…
+First paragraph...
 
-Другий абзац…
+Second paragraph...
 ```
-Абзаци — порожній рядок. Час надсилання не зберігається й не показується.
+Paragraphs are separated by empty lines. Exact send time is neither stored nor displayed.
 
-## Мобільна надійність — що зроблено
+## Mobile Reliability Features
 
-`viewport-fit=cover` + safe-area; `100dvh` з фолбеком; фон окремим `position: fixed` шаром; свайп на Pointer Events (вертикальний скрол не чіпає, край екрана залишений системному жесту «назад»); шрифти self-hosted (latin + cyrillic); менше анімованих елементів на слабких пристроях; пауза анімацій у фоновій вкладці; `prefers-reduced-motion`; View Transitions з фічедетектом.
+`viewport-fit=cover` + safe-area insets; `100dvh` with fallback; background rendered as a dedicated `position: fixed` layer; horizontal swipe built on Pointer Events (leaves vertical scroll untouched, preserves screen edges for system "swipe-to-go-back" gestures); self-hosted fonts (Latin + Cyrillic); reduced animated particles on low-power devices; canvas animations paused when the tab is in the background (`document.hidden`); `prefers-reduced-motion` compliance; View Transitions with feature detection.

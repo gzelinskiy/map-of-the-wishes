@@ -1,6 +1,7 @@
 import { useId, useMemo, type CSSProperties } from 'react';
-import { mulberry32, pick, range, round, type Rng } from '../lib/prng.ts';
+import { mulberry32, pick, range, round } from '../lib/prng.ts';
 import { rayPath, starPath } from './glyphs.tsx';
+import { COL_W, SKY_H, useSkyWidth } from '../lib/viewport.ts';
 
 type Css = CSSProperties & Record<string, string | number>;
 
@@ -16,18 +17,24 @@ export const useDensity = (): number => {
   }, []);
 };
 
+/** Множник кількості об'єктів для ширшого неба (щільність та сама), зі стелею. */
+export const spread = (W: number, cap = 3.4) => Math.min(cap, Math.max(1, W / COL_W));
+
 /* ───────── Зорі ───────── */
 
 interface Star { x: number; y: number; r: number; o: number; tw: boolean; delay: number; dur: number; cross: boolean }
 
+const MAX_STARS = 260;
+
 export const genStars = (seed: number, n: number, w: number, h: number, y0 = 0): Star[] => {
   const r = mulberry32(seed);
-  return Array.from({ length: n }, () => {
+  return Array.from({ length: Math.min(n, MAX_STARS) }, () => {
     const rad = pick(r, [0.6, 0.8, 0.9, 1.1, 1.3, 1.6] as const);
     return {
       x: round(range(r, 4, w - 4)), y: round(y0 + range(r, 4, h - 4)), r: rad,
       o: round(range(r, 0.4, 0.95), 2),
-      tw: r() < 0.6, delay: round(range(r, 0, 5), 1), dur: round(range(r, 2.6, 5.8), 1),
+      // на великій кількості мерехтить менша частка — менше навантаження на GPU
+      tw: r() < (n > 160 ? 0.45 : 0.6), delay: round(range(r, 0, 5), 1), dur: round(range(r, 2.6, 5.8), 1),
       cross: rad >= 1.6 && r() < 0.7,
     };
   });
@@ -51,29 +58,33 @@ export const StarField = ({ stars }: { stars: Star[] }) => (
 
 /* ───────── Падаючі зорі: різні напрямки та інтервали ───────── */
 
+// x — частка ширини неба; dx/dy — як у еталоні для колонки 390
 const SHOOTS = [
-  { x: 330, y: 50, dx: -230, dy: 120, delay: 2, dur: 10, w: 1.3 },   // вниз-ліворуч
-  { x: 40, y: 70, dx: 210, dy: 140, delay: 5.5, dur: 11, w: 1.1 },   // вниз-праворуч
-  { x: 200, y: 30, dx: -60, dy: 250, delay: 8.5, dur: 12, w: 1.2 },  // майже вертикально
-  { x: 120, y: 230, dx: 240, dy: -40, delay: 11, dur: 13, w: 1.0 },  // полого
+  { fx: 0.846, y: 50, dx: -230, dy: 120, delay: 2, dur: 10, w: 1.3 },   // вниз-ліворуч
+  { fx: 0.103, y: 70, dx: 210, dy: 140, delay: 5.5, dur: 11, w: 1.1 },  // вниз-праворуч
+  { fx: 0.513, y: 30, dx: -60, dy: 250, delay: 8.5, dur: 12, w: 1.2 },  // майже вертикально
+  { fx: 0.308, y: 230, dx: 240, dy: -40, delay: 11, dur: 13, w: 1.0 },  // полого
 ];
 
-export const ShootingStars = ({ count = 3, yScale = 1 }: { count?: number; yScale?: number }) => (
-  <>
-    {SHOOTS.slice(0, count).map((s, i) => {
-      // хвіст — проти напрямку руху
-      const len = 52, L = Math.hypot(s.dx, s.dy);
-      const tx = round(s.x - (s.dx / L) * len, 1), ty = round(s.y * yScale - (s.dy / L) * len, 1);
-      const style: Css = { '--dx': `${s.dx}px`, '--dy': `${s.dy}px`, animationDelay: `${s.delay}s`, animationDuration: `${s.dur}s` };
-      return (
-        <g key={i} className="shoot" style={style}>
-          <path d={`M${s.x} ${s.y * yScale}L${tx} ${ty}`} stroke="#FFF4DC" strokeWidth={s.w} strokeLinecap="round" opacity="0.9" />
-          <circle cx={s.x} cy={s.y * yScale} r={s.w + 0.4} fill="#FFFFFF" />
-        </g>
-      );
-    })}
-  </>
-);
+export const ShootingStars = ({ count = 3, W = COL_W }: { count?: number; W?: number }) => {
+  const k = Math.min(2.6, W / COL_W); // на широкому небі траєкторії довші
+  return (
+    <>
+      {SHOOTS.slice(0, count).map((s, i) => {
+        const x = round(s.fx * W, 1), dx = round(s.dx * k), dy = s.dy;
+        const len = 52, L = Math.hypot(dx, dy);
+        const tx = round(x - (dx / L) * len, 1), ty = round(s.y - (dy / L) * len, 1);
+        const style: Css = { '--dx': `${dx}px`, '--dy': `${dy}px`, animationDelay: `${s.delay}s`, animationDuration: `${s.dur}s` };
+        return (
+          <g key={i} className="shoot" style={style}>
+            <path d={`M${x} ${s.y}L${tx} ${ty}`} stroke="#FFF4DC" strokeWidth={s.w} strokeLinecap="round" opacity="0.9" />
+            <circle cx={x} cy={s.y} r={s.w + 0.4} fill="#FFFFFF" />
+          </g>
+        );
+      })}
+    </>
+  );
+};
 
 /* ───────── Хмаринки, пташки, порошинки, іскорки ───────── */
 
@@ -82,59 +93,70 @@ const cloudPath = (x: number, y: number, s: number) =>
 
 interface CloudSpec { x: number; y: number; s: number; o: number; kind: 'drift' | 'drift2' | 'cross'; delay: number; dur: number }
 
-export const genClouds = (seed: number, h: number, n: number, y0 = 90): CloudSpec[] => {
+/** Хмари: `W` — ширина неба; довжина шляху «cross»-хмар і їхня тривалість масштабуються разом. */
+export const genClouds = (seed: number, h: number, n: number, y0 = 90, W = COL_W): CloudSpec[] => {
   const r = mulberry32(seed);
-  return Array.from({ length: n }, (_, i) => {
+  const total = Math.round(n * spread(W, 3));
+  const slow = (W + 270) / (COL_W + 270); // швидкість руху та сама, що й на телефоні
+  return Array.from({ length: total }, (_, i) => {
     const kind = i % 3 === 0 ? 'drift' : i % 3 === 1 ? 'drift2' : 'cross';
     return {
-      x: kind === 'cross' ? 0 : round(range(r, 10, 260)), y: round(range(r, y0, h)), s: round(range(r, 0.75, 1.3), 2),
-      o: round(range(r, 0.32, 0.72), 2), kind, delay: -round(range(r, 1, kind === 'cross' ? 60 : 14), 1),
-      dur: kind === 'cross' ? round(range(r, 57, 90)) : 0,
+      x: kind === 'cross' ? 0 : round(range(r, 10, Math.max(80, W - 130))), y: round(range(r, y0, h)), s: round(range(r, 0.75, 1.3), 2),
+      o: round(range(r, 0.32, 0.72), 2), kind, delay: -round(range(r, 1, kind === 'cross' ? 60 * slow : 14), 1),
+      dur: kind === 'cross' ? round(range(r, 57, 90) * slow) : 0,
     };
   });
 };
 
-export const Clouds = ({ items }: { items: CloudSpec[] }) => (
+export const Clouds = ({ items, W = COL_W }: { items: CloudSpec[]; W?: number }) => (
   <>
-    {items.map((c, i) => (
-      <g key={i} className={c.kind} style={{ animationDelay: `${c.delay}s`, ...(c.dur ? { animationDuration: `${c.dur}s` } : null) }}>
-        <path d={cloudPath(c.x, c.y, c.s)} fill="#FFFFFF" opacity={c.o} />
-      </g>
-    ))}
+    {items.map((c, i) => {
+      const style: Css = { animationDelay: `${c.delay}s` };
+      if (c.dur) { style.animationDuration = `${c.dur}s`; style['--cross-to'] = `${W + 90}px`; }
+      return (
+        <g key={i} className={c.kind} style={style}>
+          <path d={cloudPath(c.x, c.y, c.s)} fill="#FFFFFF" opacity={c.o} />
+        </g>
+      );
+    })}
   </>
 );
 
-export const Birds = ({ seed, n, y0, y1, color = '#4E2C49' }: { seed: number; n: number; y0: number; y1: number; color?: string }) => {
+export const Birds = ({ seed, n, y0, y1, color = '#4E2C49', W = COL_W }: { seed: number; n: number; y0: number; y1: number; color?: string; W?: number }) => {
   const items = useMemo(() => {
     const r = mulberry32(seed);
-    return Array.from({ length: n }, () => {
+    const slow = (W + 180) / (COL_W + 170);
+    return Array.from({ length: Math.min(12, Math.round(n * spread(W, 2.5))) }, () => {
       const w = range(r, 17, 26), y = range(r, y0, y1), a = w * 0.27;
-      return { w, y, a, dur: round(range(r, 18, 29), 1), delay: -round(range(r, 1, 24), 1), flap: round(range(r, 0.46, 0.7), 2) };
+      return { w, y, a, dur: round(range(r, 18, 29) * slow, 1), delay: -round(range(r, 1, 24 * slow), 1), flap: round(range(r, 0.46, 0.7), 2) };
     });
-  }, [seed, n, y0, y1]);
+  }, [seed, n, y0, y1, W]);
   return (
     <>
-      {items.map((b, i) => (
-        <g key={i} className="bird" style={{ animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s` }}>
-          <path
-            className="flap" style={{ animationDuration: `${b.flap}s` }}
-            d={`M0 ${round(b.y, 1)} Q${round(b.w / 4, 1)} ${round(b.y - b.a, 1)} ${round(b.w / 2, 1)} ${round(b.y, 1)} Q${round((3 * b.w) / 4, 1)} ${round(b.y - b.a, 1)} ${round(b.w, 1)} ${round(b.y, 1)}`}
-            fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
-          />
-        </g>
-      ))}
+      {items.map((b, i) => {
+        const style: Css = { animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s`, '--fly-to': `${W + 100}px` };
+        return (
+          <g key={i} className="bird" style={style}>
+            <path
+              className="flap" style={{ animationDuration: `${b.flap}s` }}
+              d={`M0 ${round(b.y, 1)} Q${round(b.w / 4, 1)} ${round(b.y - b.a, 1)} ${round(b.w / 2, 1)} ${round(b.y, 1)} Q${round((3 * b.w) / 4, 1)} ${round(b.y - b.a, 1)} ${round(b.w, 1)} ${round(b.y, 1)}`}
+              fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+            />
+          </g>
+        );
+      })}
     </>
   );
 };
 
-export const Motes = ({ seed, n, y0, y1 }: { seed: number; n: number; y0: number; y1: number }) => {
+export const Motes = ({ seed, n, y0, y1, W = COL_W }: { seed: number; n: number; y0: number; y1: number; W?: number }) => {
   const items = useMemo(() => {
     const r = mulberry32(seed);
-    return Array.from({ length: n }, () => ({
-      x: round(range(r, 15, 375)), y: round(range(r, y0, y1)), r: pick(r, [1.2, 1.6, 2, 2.6] as const),
+    return Array.from({ length: Math.min(70, Math.round(n * spread(W, 3))) }, () => ({
+      x: round(range(r, 15, W - 15)), y: round(range(r, y0, y1)), r: pick(r, [1.2, 1.6, 2, 2.6] as const),
       dur: round(range(r, 7.5, 13), 1), delay: -round(range(r, 1, 10), 1),
     }));
-  }, [seed, n, y0, y1]);
+  }, [seed, n, y0, y1, W]);
   return (
     <>
       {items.map((m, i) => (
@@ -161,7 +183,7 @@ export const Glints = ({ seed, n, cx, cy, rMin = 90, rMax = 230 }: { seed: numbe
   );
 };
 
-/** Сонце, що сходить: промені, диск, три кільця. cx/cy — центр; масштаб r — радіус диска. */
+/** Сонце, що сходить: промені, диск, три кільця. cx/cy — центр; r — радіус диска. */
 export const RisingSun = ({ cx, cy, r, glow, ray = '#FFD89A', core = '#FFE7BD', halo = '#FFE2B0', ringK = 1.34 }: { cx: number; cy: number; r: number; glow: number; ray?: string; core?: string; halo?: string; ringK?: number }) => (
   <>
     {[0, -2, -4].map((d) => (
@@ -193,30 +215,35 @@ export const Moon = ({ cx, cy, r = 23 }: { cx: number; cy: number; r?: number })
 
 /* ───────── Готові шари неба ───────── */
 
-/** Нічне небо: зорі + падаючі зорі. Заповнює контейнер (slice). */
+/**
+ * Нічне небо: зорі + падаючі зорі. Світ 844 од. заввишки, завширшки W (за пропорціями вікна),
+ * тож на будь-якому екрані заповнює контейнер без обрізання й спотворень.
+ */
 export const NightSky = ({ seed = 11, stars = 90, moon = false, shoots = 3, align = 'xMidYMid' }: { seed?: number; stars?: number; moon?: boolean; shoots?: number; align?: 'xMidYMid' | 'xMidYMin' }) => {
   const d = useDensity();
-  const field = useMemo(() => genStars(seed, Math.round(stars * d), 390, 844), [seed, stars, d]);
+  const W = useSkyWidth();
+  const field = useMemo(() => genStars(seed, Math.round(stars * d * spread(W)), W, SKY_H), [seed, stars, d, W]);
   return (
-    <svg viewBox="0 0 390 844" preserveAspectRatio={`${align} slice`} aria-hidden="true" focusable="false">
+    <svg viewBox={`0 0 ${W} ${SKY_H}`} preserveAspectRatio={`${align} slice`} aria-hidden="true" focusable="false">
       <StarField stars={field} />
-      {moon && <Moon cx={322} cy={120} />}
-      {d >= 0.55 && <ShootingStars count={shoots} />}
+      {moon && <Moon cx={round(W * 0.826)} cy={120} />}
+      {d >= 0.55 && <ShootingStars count={shoots} W={W} />}
     </svg>
   );
 };
 
-/** Світанок для ранкового побажання: сонце знизу, хмари, пташки, порошинки. */
+/** Світанок для ранкового побажання: сонце знизу по центру, хмари, пташки, порошинки. */
 export const DawnSky = ({ seed = 5 }: { seed?: number }) => {
   const d = useDensity();
-  const clouds = useMemo(() => genClouds(seed, 600, 6), [seed]);
+  const W = useSkyWidth();
+  const clouds = useMemo(() => genClouds(seed, 600, 6, 90, W), [seed, W]);
   return (
-    <svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
-      <Glints seed={seed + 1} n={Math.round(12 * d)} cx={195} cy={880} />
-      <Clouds items={clouds} />
-      <RisingSun cx={195} cy={880} r={74} glow={200} />
-      <Birds seed={seed + 2} n={Math.round(4 * d) || 1} y0={190} y1={270} />
-      <Motes seed={seed + 3} n={Math.round(20 * d)} y0={330} y1={820} />
+    <svg viewBox={`0 0 ${W} ${SKY_H}`} preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+      <Glints seed={seed + 1} n={Math.round(12 * d)} cx={W / 2} cy={880} />
+      <Clouds items={clouds} W={W} />
+      <RisingSun cx={W / 2} cy={880} r={74} glow={200} />
+      <Birds seed={seed + 2} n={Math.round(4 * d) || 1} y0={190} y1={270} W={W} />
+      <Motes seed={seed + 3} n={Math.round(20 * d)} y0={330} y1={820} W={W} />
     </svg>
   );
 };

@@ -4,19 +4,21 @@ import { formatFull, plural, type WishType } from '@nebo/shared';
 import { useIndex } from '../lib/IndexContext.tsx';
 import { useTheme } from '../lib/hooks.ts';
 import { Birds, Clouds, genClouds, Motes, NightSky, RisingSun, useDensity } from '../components/skies.tsx';
+import { useSkyWidth } from '../lib/viewport.ts';
 import { IconForward, IconMoon, IconShuffle, IconSun } from '../components/glyphs.tsx';
 
 const wishes = (n: number) => `${n} ${plural(n, 'побажання', 'побажання', 'побажань')}`;
 
 const DawnScene = () => {
   const d = useDensity();
-  const clouds = useMemo(() => genClouds(21, 270, 6, 60), []);
+  const W = useSkyWidth();
+  const clouds = useMemo(() => genClouds(21, 270, 6, 60, W), [W]);
   return (
-    <svg viewBox="0 0 390 386" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
-      <Clouds items={clouds} />
-      <RisingSun cx={300} cy={346} r={64} glow={150} ray="#FFD89A" core="#FFE2A6" halo="#FFE8B8" ringK={0.94} />
-      <Birds seed={4} n={Math.round(4 * d) || 1} y0={96} y1={128} color="#5E3550" />
-      <Motes seed={9} n={Math.round(12 * d)} y0={120} y1={360} />
+    <svg viewBox={`0 0 ${W} 386`} preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+      <Clouds items={clouds} W={W} />
+      <RisingSun cx={Math.round(W * 0.769)} cy={346} r={64} glow={150} ray="#FFD89A" core="#FFE2A6" halo="#FFE8B8" ringK={0.94} />
+      <Birds seed={4} n={Math.round(4 * d) || 1} y0={96} y1={128} color="#5E3550" W={W} />
+      <Motes seed={9} n={Math.round(12 * d)} y0={120} y1={360} W={W} />
     </svg>
   );
 };
@@ -37,7 +39,7 @@ export const Home = () => {
   };
 
   return (
-    <div className="stage theme-night home">
+    <div className="home-root theme-night">
       <div className="home-night" aria-hidden="true">
         <NightSky seed={17} stars={80} moon shoots={4} align="xMidYMin" />
       </div>
@@ -49,6 +51,7 @@ export const Home = () => {
         <DawnScene />
       </div>
 
+      <div className="stage home">
       <header className="home-title up" style={{ animationDelay: '0.2s' }}>
         {idx.start && <div className="eyebrow">з {formatFull(idx.start)}</div>}
         <h1>Небо наших<br />побажань</h1>
@@ -77,6 +80,7 @@ export const Home = () => {
           <span className="card-go"><IconForward /></span>
         </div>
       </Link>
+      </div>
     </div>
   );
 };

@@ -28,7 +28,7 @@ svg { display: block; }
 
 :focus-visible { outline: 2px solid var(--accent, #F6C87A); outline-offset: 3px; border-radius: 8px; }
 
-/* Колонка до 480px, центрована; висота — dvh з фолбеком */
+/* Колонка до 480px по центру — лише для контенту; небо малюється окремими шарами на весь екран */
 .stage {
   position: relative;
   width: 100%;
@@ -38,18 +38,17 @@ svg { display: block; }
   min-height: 100dvh;
   overflow-x: clip;
   color: var(--text);
-  background: var(--bg-gradient);
 }
 
-/* Фіксований шар неба: не «стрибає» при появі/зникненні тулбара браузера */
+/* Фіксований шар неба на все вікно: не «стрибає» при появі/зникненні тулбара браузера.
+   Сам несе градієнт теми, тож на довгих текстах фон не розтягується. */
 .sky-fixed {
   position: fixed;
   top: 0; bottom: 0; left: 0; right: 0;
-  width: min(100%, var(--column));
-  margin: 0 auto;
   overflow: hidden;
   pointer-events: none;
   contain: strict;
+  background: var(--bg-gradient);
 }
 .sky-fixed > svg, .sky-abs > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .sky-abs { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -93,4 +92,18 @@ svg { display: block; }
   font-size: 14px; font-weight: 700; cursor: pointer;
   box-shadow: 0 6px 20px rgba(20, 14, 50, 0.35);
   touch-action: manipulation;
+}
+
+/* Десктоп: тонкий скролбар у тон теми й м'який ховер (на дотикових екранах не діє) */
+html { scrollbar-width: thin; scrollbar-color: rgba(255, 244, 220, 0.28) transparent; }
+html[data-theme='morning'] { scrollbar-color: rgba(94, 31, 62, 0.35) transparent; }
+@media (hover: hover) and (pointer: fine) {
+  .circle-btn, .pill-btn, .map-pill, .seg a, .home-card, .map-hero-label { transition: transform .2s ease, background-color .2s ease, box-shadow .3s ease, opacity .2s ease; }
+  .circle-btn:hover:not(:disabled):not([aria-disabled='true']) { background: color-mix(in srgb, var(--btn-bg) 60%, var(--accent) 22%); }
+  .pill-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(20, 14, 50, 0.42); }
+  .map-pill:hover { transform: translateY(-50%) scale(1.03); }
+  .map-pill[data-side='left']:hover { transform: translate(-100%, -50%) scale(1.03); }
+  .home-card:hover { transform: translateY(-2px); }
+  .seg a:not(.on):hover { background: rgba(255, 255, 255, 0.1); }
+  .const-btn:hover .pop, .const-btn:hover svg { filter: drop-shadow(0 0 6px var(--accent)); }
 }

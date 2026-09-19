@@ -1,5 +1,6 @@
 /* ───────── Головна ───────── */
-.home { --horizon: 54.3%; height: 100dvh; min-height: 780px; background: #090C24; }
+.home-root { --horizon: 54.3%; position: relative; height: 100dvh; min-height: 780px; background: #090C24; overflow: hidden; }
+.home { height: 100%; min-height: 0; }
 .home-night {
   position: absolute; top: 0; left: 0; right: 0; height: calc(var(--horizon) + 30px);
   background: linear-gradient(180deg, #090C24 0%, #171A46 60%, #2E2658 100%); overflow: hidden;
@@ -43,9 +44,12 @@
 .home-random .pill-btn { white-space: nowrap; }
 
 /* ───────── Карта ───────── */
-.map-stage { background: var(--bg-gradient); }
+.map-wrap { position: relative; width: 100%; overflow-x: clip; }
+/* повноширинне небо + пейзаж; висота = висоті колонки карти */
+.map-sky { position: absolute; inset: 0; overflow: hidden; background: var(--bg-gradient); }
+.map-sky > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map-col { min-height: 0; overflow: visible; }
 .map { position: relative; width: 100%; }
-.map-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
 .dot-link { cursor: pointer; outline: none; }
 .dot-link .focus-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0; }
 .dot-link:focus-visible .focus-ring { opacity: 1; }
@@ -104,7 +108,7 @@
 .wish-stage > .sky-fixed { position: fixed; }
 .nightfade .fade-bg { position: absolute; inset: 0; background: linear-gradient(180deg, #090C24 0%, #141840 50%, #2F2657 100%); }
 .nightfade .fade-bg > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.nightfade { z-index: 1; }
+.nightfade { z-index: 1; background: none; }
 .wish-header, .wish-main, .wish-spacer, .wish-nav { z-index: 2; }
 
 .wish-header {

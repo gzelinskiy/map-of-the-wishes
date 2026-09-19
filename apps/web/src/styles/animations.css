@@ -1,4 +1,6 @@
-/* Перенесено дослівно з design/screens/index.html (DESIGN-SPEC §5). */
+/* Перенесено з design/screens/index.html (DESIGN-SPEC §5).
+   Єдина зміна: кінцеві точки .bird/.cross задаються змінними --fly-to / --cross-to
+   (за замовчуванням як в еталоні), щоб на широких екранах вони перетинали все небо. */
 .tw{animation:tw 4s ease-in-out infinite both}
 @keyframes tw{0%,100%{opacity:0.2}50%{opacity:1}}
 .glow{animation:glow 3.6s ease-in-out infinite}
@@ -21,7 +23,7 @@
 .pop{transform-box:fill-box;transform-origin:center;animation:pop 0.7s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 .bird{animation:fly 22s linear infinite}
-@keyframes fly{from{transform:translate(-80px,20px)}to{transform:translate(480px,-70px)}}
+@keyframes fly{from{transform:translate(-80px,20px)}to{transform:translate(var(--fly-to,480px),-70px)}}
 .flap{transform-box:fill-box;transform-origin:center;animation:flap 0.55s ease-in-out infinite alternate}
 @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(-0.35)}}
 .mote{animation:mote 10s ease-in-out infinite}
@@ -31,7 +33,7 @@
 .glint{transform-box:fill-box;transform-origin:center;animation:glint 4.5s ease-in-out infinite both}
 @keyframes glint{0%,100%{transform:scale(0) rotate(0deg);opacity:0}45%{transform:scale(1) rotate(45deg);opacity:1}60%{transform:scale(0.6) rotate(70deg);opacity:0.6}}
 .cross{animation:cross 70s linear infinite}
-@keyframes cross{from{transform:translateX(-180px)}to{transform:translateX(480px)}}
+@keyframes cross{from{transform:translateX(-180px)}to{transform:translateX(var(--cross-to,480px))}}
 .nightfade{animation:nightfade 3.4s ease-in 0.3s both;pointer-events:none}
 @keyframes nightfade{from{opacity:1}to{opacity:0}}
 .pulse{transform-box:fill-box;transform-origin:center;animation:pulse 3.2s ease-in-out infinite}

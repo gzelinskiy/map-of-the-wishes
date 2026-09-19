@@ -1,0 +1,62 @@
+:root {
+  --font-ui: Manrope, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-hand: Caveat, 'Segoe Script', cursive;
+  --font-text: Lora, Georgia, 'Times New Roman', serif;
+
+  --column: 480px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Ніч */
+.theme-night {
+  --bg: #090C24;
+  --bg-gradient: linear-gradient(180deg, #090C24 0%, #141840 45%, #231F4E 80%, #2F2657 100%);
+  --text: #F5EEDF;
+  --text-strong: #FBF3E2;
+  --text-2: #CFC8EA;
+  --text-muted: #B7B0D8;
+  --body: #EFE8F5;
+  --accent: #F6C87A;
+  --on-accent: #1B1433;
+  --btn-bg: rgba(255, 244, 220, 0.08);
+  --btn-border: rgba(255, 244, 220, 0.22);
+  --btn-fg: #F5EEDF;
+  --pill-bg: rgba(12, 10, 36, 0.55);
+  --pill-border: rgba(255, 244, 220, 0.25);
+  --pill-title: #FBF3E2;
+  --pill-sub: #CFC8EA;
+  --seg-bg: rgba(12, 10, 36, 0.5);
+  --seg-border: rgba(255, 244, 220, 0.22);
+  --seg-idle: #E6E0F4;
+  --route: #F6C87A;
+  --start-title: #FBE7C8;
+  --start-sub: #D9CFE8;
+}
+
+/* Ранок */
+.theme-morning {
+  --bg: #FDE8CA;
+  --bg-gradient: linear-gradient(180deg, #5E6FAE 0%, #9A8CC4 20%, #E0AAB6 46%, #F6CBA6 72%, #FDE8CA 100%);
+  --text: #2A1F3D;
+  --text-strong: #FBF3E2;
+  --text-2: #4A2F4F;
+  --text-muted: #5E4A63;
+  --body: #2A1F3D;
+  --accent: #B8506A;
+  --on-accent: #5E1F3E;
+  --btn-bg: rgba(255, 255, 255, 0.4);
+  --btn-border: rgba(255, 255, 255, 0.6);
+  --btn-fg: #2A1F3D;
+  --pill-bg: rgba(255, 250, 240, 0.62);
+  --pill-border: rgba(94, 31, 62, 0.18);
+  --pill-title: #3A1F3A;
+  --pill-sub: #3E2A4F;
+  --seg-bg: rgba(255, 255, 255, 0.28);
+  --seg-border: rgba(255, 255, 255, 0.55);
+  --seg-idle: #2A1F3D;
+  --route: #B8506A;
+  --start-title: #FFF4E0;
+  --start-sub: #FCE9DA;
+}

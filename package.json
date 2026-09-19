@@ -1,0 +1,17 @@
+{
+  "name": "nebo-pobazhan",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "import": "tsx scripts/import-oksana.ts",
+    "dev:server": "npm run dev -w @nebo/server",
+    "dev:web": "npm run dev -w @nebo/web",
+    "build": "npm run build -w @nebo/web && npm run build -w @nebo/server",
+    "test": "npm test -w @nebo/shared -w @nebo/server -w @nebo/web"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,50 @@
+/* Перенесено дослівно з design/screens/index.html (DESIGN-SPEC §5). */
+.tw{animation:tw 4s ease-in-out infinite both}
+@keyframes tw{0%,100%{opacity:0.2}50%{opacity:1}}
+.glow{animation:glow 3.6s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:0.35}50%{opacity:0.9}}
+.shoot{animation:shoot 9s ease-in infinite;opacity:0}
+@keyframes shoot{0%{transform:translate(0,0);opacity:0}2%{opacity:1}9%{transform:translate(var(--dx),var(--dy));opacity:0}100%{transform:translate(var(--dx),var(--dy));opacity:0}}
+.drift{animation:drift 22s ease-in-out infinite alternate}
+.drift2{animation:drift 30s ease-in-out infinite alternate-reverse}
+@keyframes drift{from{transform:translateX(-24px)}to{transform:translateX(28px)}}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 80s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.breathe{transform-box:fill-box;transform-origin:center;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.rise{animation:rise 2.6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{transform:translateY(70px);opacity:0.4}to{transform:none;opacity:1}}
+.up{animation:up 1s cubic-bezier(.2,.7,.2,1) backwards}
+@keyframes up{from{transform:translateY(16px);opacity:0;filter:blur(3px)}to{transform:none;opacity:1;filter:none}}
+.draw{animation:draw 3.4s ease-out both}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.pop{transform-box:fill-box;transform-origin:center;animation:pop 0.7s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.bird{animation:fly 22s linear infinite}
+@keyframes fly{from{transform:translate(-80px,20px)}to{transform:translate(480px,-70px)}}
+.flap{transform-box:fill-box;transform-origin:center;animation:flap 0.55s ease-in-out infinite alternate}
+@keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(-0.35)}}
+.mote{animation:mote 10s ease-in-out infinite}
+@keyframes mote{0%{transform:translate(0,0);opacity:0}25%{opacity:0.95}100%{transform:translate(22px,-170px);opacity:0}}
+.ring{transform-box:fill-box;transform-origin:center;animation:ring 6s ease-out infinite both}
+@keyframes ring{0%{transform:scale(1);opacity:0.55}100%{transform:scale(2.6);opacity:0}}
+.glint{transform-box:fill-box;transform-origin:center;animation:glint 4.5s ease-in-out infinite both}
+@keyframes glint{0%,100%{transform:scale(0) rotate(0deg);opacity:0}45%{transform:scale(1) rotate(45deg);opacity:1}60%{transform:scale(0.6) rotate(70deg);opacity:0.6}}
+.cross{animation:cross 70s linear infinite}
+@keyframes cross{from{transform:translateX(-180px)}to{transform:translateX(480px)}}
+.nightfade{animation:nightfade 3.4s ease-in 0.3s both;pointer-events:none}
+@keyframes nightfade{from{opacity:1}to{opacity:0}}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 3.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.firefly{animation:ff 5s ease-in-out infinite alternate}
+@keyframes ff{0%{transform:translate(0,0);opacity:0.1}50%{opacity:1}100%{transform:translate(16px,-20px);opacity:0.25}}
+.sunup{animation:sunup 1.6s cubic-bezier(.2,.7,.2,1) backwards}
+@keyframes sunup{from{transform:translateY(30px) scale(0.7);opacity:0}to{transform:none;opacity:1}}
+.press{transition:transform .2s ease, box-shadow .3s ease}
+.press:active{transform:scale(0.96)}
+@media (prefers-reduced-motion: reduce){.tw,.glow,.shoot,.drift,.drift2,.spin,.breathe,.rise,.up,.draw,.pop,.bird,.flap,.mote,.ring,.glint,.cross,.pulse,.firefly,.sunup{animation:none!important}.shoot,.mote,.bird,.nightfade,.ring,.glint{display:none}}
+
+/* Додатково: пауза анімацій у фоновій вкладці (економія батареї) */
+html[data-hidden="true"] *,
+html[data-hidden="true"] *::before,
+html[data-hidden="true"] *::after { animation-play-state: paused !important; }

@@ -16,7 +16,7 @@ export const buildApp = async (cfg: Config, store: WishStore, keys: KeyStore): P
   await app.register(rateLimit, { global: false });
 
   app.addHook('onSend', async (_req, reply) => {
-    reply.header('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    reply.header('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet, noimageindex, nocache, notranslate');
     reply.header('Referrer-Policy', 'no-referrer');
     reply.header('X-Content-Type-Options', 'nosniff');
   });
@@ -28,6 +28,11 @@ export const buildApp = async (cfg: Config, store: WishStore, keys: KeyStore): P
   };
 
   app.get('/healthz', async () => ({ ok: true }));
+
+  app.get('/robots.txt', async (_req, reply) => {
+    reply.type('text/plain; charset=utf-8');
+    return 'User-agent: *\nDisallow: /\n';
+  });
 
   app.get<{ Querystring: { k?: string } }>(
     '/unlock',

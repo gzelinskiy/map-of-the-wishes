@@ -24,10 +24,23 @@ const setup = async () => {
 
 const cookieOf = (res: { headers: Record<string, any> }) => String(res.headers['set-cookie']).split(';')[0];
 
+test('robots.txt and headers prevent search engine indexing', async () => {
+  const { app, done } = await setup();
+  const res = await app.inject('/robots.txt');
+  assert.equal(res.statusCode, 200);
+  assert.match(String(res.headers['content-type']), /^text\/plain/);
+  assert.equal(res.payload, 'User-agent: *\nDisallow: /\n');
+  assert.equal(res.headers['x-robots-tag'], 'noindex, nofollow, noarchive, nosnippet, noimageindex, nocache, notranslate');
+  assert.equal(res.headers['referrer-policy'], 'no-referrer');
+  await done();
+});
+
 test('api is locked without session', async () => {
   const { app, done } = await setup();
   for (const url of ['/api/index', '/api/me', '/api/wish/night/2026-08-01']) {
-    assert.equal((await app.inject(url)).statusCode, 401, url);
+    const res = await app.inject(url);
+    assert.equal(res.statusCode, 401, url);
+    assert.equal(res.headers['x-robots-tag'], 'noindex, nofollow, noarchive, nosnippet, noimageindex, nocache, notranslate');
   }
   assert.equal((await app.inject('/healthz')).statusCode, 200);
   await done();
@@ -55,7 +68,7 @@ test('unlock → cookie → api works; revoke kills the session immediately', as
   const idx = await app.inject({ url: '/api/index', headers: { cookie } });
   assert.equal(idx.statusCode, 200);
   assert.deepEqual(idx.json(), { start: '2026-08-01', night: ['2026-08-01', '2026-08-02'], morning: ['2026-08-02'] });
-  assert.equal(idx.headers['x-robots-tag'], 'noindex, nofollow, noarchive');
+  assert.equal(idx.headers['x-robots-tag'], 'noindex, nofollow, noarchive, nosnippet, noimageindex, nocache, notranslate');
 
   const etag = String(idx.headers.etag);
   assert.equal((await app.inject({ url: '/api/index', headers: { cookie, 'if-none-match': etag } })).statusCode, 304);

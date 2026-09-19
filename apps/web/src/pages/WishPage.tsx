@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { formatDate, formatShort, isIsoDate, isWishType, paragraphs, type WishResponse, type WishType } from '@nebo/shared';
+import { formatDate, formatShort, isIsoDate, isWishType, monthKey, paragraphs, type WishResponse, type WishType } from '@nebo/shared';
 import { useIndex } from '../lib/IndexContext.tsx';
 import { getWish, LockedError, prefetchWish } from '../lib/api.ts';
 import { useArrowKeys, useSwipe, useTheme } from '../lib/hooks.ts';
 import { DawnSky, NightSky } from '../components/skies.tsx';
-import { HeroStar, HeroSun, IconBack, IconForward, IconMoon, IconSun, NavStar, NavSun } from '../components/glyphs.tsx';
+import { HeroStar, HeroSun, IconBack, IconChevronDown, IconForward, IconMoon, IconSun, NavStar, NavSun } from '../components/glyphs.tsx';
+import { MonthDatePicker } from '../components/MonthDatePicker.tsx';
 
 const NAV_POS: Record<number, { x: number; y: number }[]> = {
   1: [{ x: 110, y: 26 }],
@@ -31,6 +32,7 @@ const WishInner = ({ type, date }: { type: WishType; date: string }) => {
   const nav = useNavigate();
   const root = useRef<HTMLDivElement>(null);
   const morning = type === 'morning';
+  const [pickerOpen, setPickerOpen] = useState(false);
   useTheme(type);
 
   const list = idx[type];
@@ -88,10 +90,10 @@ const WishInner = ({ type, date }: { type: WishType; date: string }) => {
 
   return (
     <div ref={root} className={`stage theme-${type} wish-stage`}>
-      <div className="sky-fixed">{morning ? <DawnSky /> : <NightSky seed={11} stars={95} shoots={3} />}</div>
+      <div className="sky-fixed">{morning ? <DawnSky hearts="edges" /> : <NightSky seed={11} stars={95} shoots={3} hearts="edges" />}</div>
       {morning && fade > 0 && (
         <div key={fade} className="sky-fixed nightfade" aria-hidden="true">
-          <div className="fade-bg"><NightSky seed={11} stars={95} shoots={0} /></div>
+          <div className="fade-bg"><NightSky seed={11} stars={95} shoots={0} hearts="edges" /></div>
         </div>
       )}
 
@@ -99,7 +101,15 @@ const WishInner = ({ type, date }: { type: WishType; date: string }) => {
         <Link to={`/${type}`} state={{ focus: date }} viewTransition aria-label={morning ? 'До карти ранків' : 'До карти ночей'} className="circle-btn press"><IconBack /></Link>
         <div className="wish-headline">
           <div className="wish-kind">{morning ? 'Добрий ранок' : 'Добраніч'}</div>
-          <div className="wish-date">{formatDate(date)}</div>
+          <button
+            type="button"
+            className="wish-date-btn press"
+            onClick={() => setPickerOpen(true)}
+            aria-label={`Вибрати іншу дату (зараз: ${formatDate(date)})`}
+          >
+            <span>{formatDate(date)}</span>
+            <IconChevronDown size={14} />
+          </button>
         </div>
         {counterpart ? (
           <Link
@@ -145,6 +155,14 @@ const WishInner = ({ type, date }: { type: WishType; date: string }) => {
         </div>
         <button type="button" className="circle-btn lg press" aria-label="Наступне побажання" disabled={!newer} onClick={() => go(newer)}><IconForward /></button>
       </nav>
+
+      <MonthDatePicker
+        type={type}
+        monthKey={monthKey(date)}
+        currentDate={date}
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 };

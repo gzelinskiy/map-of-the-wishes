@@ -1,6 +1,6 @@
 import { useId, useMemo, type CSSProperties } from 'react';
 import { mulberry32, pick, range, round } from '../lib/prng.ts';
-import { rayPath, starPath } from './glyphs.tsx';
+import { heartPath, rayPath, starPath } from './glyphs.tsx';
 import { COL_W, SKY_H, useSkyWidth } from '../lib/viewport.ts';
 
 type Css = CSSProperties & Record<string, string | number>;
@@ -166,6 +166,59 @@ export const Motes = ({ seed, n, y0, y1, W = COL_W }: { seed: number; n: number;
   );
 };
 
+/* ───────── Сердечка ───────── */
+
+interface HeartSpec { x: number; y: number; s: number; o: number; delay: number; dur: number }
+
+/** Кілька сердечок, розкиданих детерміновано. Навмисно мало — це акцент, а не візерунок. */
+export const genHearts = (seed: number, n: number, W: number, y0: number, y1: number, cap = 2): HeartSpec[] => {
+  const r = mulberry32(seed);
+  return Array.from({ length: Math.round(n * spread(W, cap)) }, () => ({
+    x: round(range(r, 26, Math.max(40, W - 26))), y: round(range(r, y0, y1)),
+    s: round(range(r, 6.5, 11), 1), o: round(range(r, 0.72, 0.95), 2),
+    delay: -round(range(r, 0, 5), 1), dur: round(range(r, 3.4, 5.6), 1),
+  }));
+};
+
+/**
+ * Сердечка обабіч текстової колонки — щоб не лягали на слова побажання.
+ * На телефоні це поля всередині відступів тексту, на широкому екрані — вільне місце по боках.
+ */
+export const genEdgeHearts = (seed: number, n: number, W: number, y0: number, y1: number): HeartSpec[] => {
+  const r = mulberry32(seed);
+  const left = (W - COL_W) / 2;
+  const wide = left > 80;
+  return Array.from({ length: n * 2 }, (_, i) => {
+    const s = round(range(r, wide ? 7 : 5.5, wide ? 11 : 7.5), 1);
+    const inner = wide ? left - 24 : 15;                // ближче до колонки
+    const outer = wide ? Math.max(30, left - 190) : 11; // далі від колонки (на телефоні — середина 28px відступу)
+    const off = range(r, Math.min(inner, outer), Math.max(inner, outer));
+    return {
+      x: round(i % 2 === 0 ? off : W - off), y: round(range(r, y0, y1)),
+      s, o: round(range(r, wide ? 0.7 : 0.62, wide ? 0.92 : 0.85), 2),
+      delay: -round(range(r, 0, 5), 1), dur: round(range(r, 3.4, 5.6), 1),
+    };
+  });
+};
+
+/**
+ * `beat` — сердечко м'яко «б'ється» (лишається видимим при prefers-reduced-motion),
+ * `rise` — підіймається й тане, як порошинка чи димок.
+ */
+export const Hearts = ({ items, fill, motion = 'beat' }: {
+  items: HeartSpec[]; fill: string; motion?: 'beat' | 'rise';
+}) => (
+  <>
+    {items.map((h, i) => (
+      <path
+        key={i} className={motion === 'beat' ? 'breathe' : 'mote'} d={heartPath(h.x, h.y, h.s)}
+        fill={fill} opacity={h.o}
+        style={{ animationDelay: `${h.delay}s`, animationDuration: `${h.dur}s` }}
+      />
+    ))}
+  </>
+);
+
 export const Glints = ({ seed, n, cx, cy, rMin = 90, rMax = 230 }: { seed: number; n: number; cx: number; cy: number; rMin?: number; rMax?: number }) => {
   const items = useMemo(() => {
     const r = mulberry32(seed);
@@ -219,13 +272,18 @@ export const Moon = ({ cx, cy, r = 23 }: { cx: number; cy: number; r?: number })
  * Нічне небо: зорі + падаючі зорі. Світ 844 од. заввишки, завширшки W (за пропорціями вікна),
  * тож на будь-якому екрані заповнює контейнер без обрізання й спотворень.
  */
-export const NightSky = ({ seed = 11, stars = 90, moon = false, shoots = 3, align = 'xMidYMid' }: { seed?: number; stars?: number; moon?: boolean; shoots?: number; align?: 'xMidYMid' | 'xMidYMin' }) => {
+export const NightSky = ({ seed = 11, stars = 90, moon = false, shoots = 3, align = 'xMidYMid', hearts: heartMode = 'free' }: { seed?: number; stars?: number; moon?: boolean; shoots?: number; align?: 'xMidYMid' | 'xMidYMin'; hearts?: 'free' | 'edges' | 'none' }) => {
   const d = useDensity();
   const W = useSkyWidth();
   const field = useMemo(() => genStars(seed, Math.round(stars * d * spread(W)), W, SKY_H), [seed, stars, d, W]);
+  const hearts = useMemo(
+    () => (heartMode === 'edges' ? genEdgeHearts(seed + 40, 2, W, 150, SKY_H - 150) : genHearts(seed + 40, 3, W, 120, SKY_H - 120)),
+    [seed, W, heartMode],
+  );
   return (
     <svg viewBox={`0 0 ${W} ${SKY_H}`} preserveAspectRatio={`${align} slice`} aria-hidden="true" focusable="false">
       <StarField stars={field} />
+      {heartMode !== 'none' && <Hearts items={hearts} fill="#F6C87A" />}
       {moon && <Moon cx={round(W * 0.826)} cy={120} />}
       {d >= 0.55 && <ShootingStars count={shoots} W={W} />}
     </svg>
@@ -233,10 +291,14 @@ export const NightSky = ({ seed = 11, stars = 90, moon = false, shoots = 3, alig
 };
 
 /** Світанок для ранкового побажання: сонце знизу по центру, хмари, пташки, порошинки. */
-export const DawnSky = ({ seed = 5 }: { seed?: number }) => {
+export const DawnSky = ({ seed = 5, hearts: heartMode = 'free' }: { seed?: number; hearts?: 'free' | 'edges' | 'none' }) => {
   const d = useDensity();
   const W = useSkyWidth();
   const clouds = useMemo(() => genClouds(seed, 600, 6, 90, W), [seed, W]);
+  const hearts = useMemo(
+    () => (heartMode === 'edges' ? genEdgeHearts(seed + 41, 2, W, 330, 720) : genHearts(seed + 41, 3, W, 380, 700)),
+    [seed, W, heartMode],
+  );
   return (
     <svg viewBox={`0 0 ${W} ${SKY_H}`} preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
       <Glints seed={seed + 1} n={Math.round(12 * d)} cx={W / 2} cy={880} />
@@ -244,6 +306,7 @@ export const DawnSky = ({ seed = 5 }: { seed?: number }) => {
       <RisingSun cx={W / 2} cy={880} r={74} glow={200} />
       <Birds seed={seed + 2} n={Math.round(4 * d) || 1} y0={190} y1={270} W={W} />
       <Motes seed={seed + 3} n={Math.round(20 * d)} y0={330} y1={820} W={W} />
+      {heartMode !== 'none' && <Hearts items={hearts} fill="#C2555E" />}
     </svg>
   );
 };

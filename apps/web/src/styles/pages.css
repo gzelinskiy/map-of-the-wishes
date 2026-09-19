@@ -119,15 +119,70 @@
 .theme-morning .wish-headline { color: #FBF3E2; }
 .wish-kind { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.85; }
 .wish-date { font-family: var(--font-head); font-style: italic; font-weight: 600; font-size: 24px; line-height: 1; }
+.wish-date-btn {
+  background: transparent;
+  border: 0;
+  padding: 2px 8px;
+  margin: -2px -8px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-head);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1;
+  color: inherit;
+  touch-action: manipulation;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+.wish-date-btn:hover { background: var(--btn-bg); }
+.wish-date-btn svg { opacity: 0.65; transition: transform 0.2s ease; }
+.wish-date-btn:hover svg { opacity: 1; transform: translateY(1px); }
 .theme-morning .wish-header .circle-btn { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.45); color: #FBF3E2; }
 
 .wish-hero { margin-top: 22px; display: flex; justify-content: center; }
-.wish-text { padding: 22px 28px 24px; display: flex; flex-direction: column; gap: 14px; min-height: 120px; }
-.wish-text p {
-  font-family: var(--font-text); font-size: 19px; line-height: 1.75; color: var(--body);
-  white-space: pre-line; overflow-wrap: break-word; hyphens: none;
+.wish-text {
+  margin: 18px 16px 0;
+  padding: 24px 22px 26px;
+  border-radius: 24px;
+  background: var(--wish-card-bg);
+  border: 1px solid var(--wish-card-border);
+  box-shadow: var(--wish-card-shadow);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 120px;
 }
-.wish-error { padding: 22px 28px; font-family: var(--font-hand); font-size: 22px; text-align: center; color: var(--text-2); }
+.wish-text p {
+  font-family: var(--font-text);
+  font-size: clamp(20px, 5.2vw, 22px);
+  font-weight: 500;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: var(--wish-text-color);
+  white-space: pre-line;
+  overflow-wrap: break-word;
+  hyphens: none;
+}
+.wish-error {
+  margin: 18px 16px 0;
+  padding: 24px 22px;
+  border-radius: 24px;
+  background: var(--wish-card-bg);
+  border: 1px solid var(--wish-card-border);
+  box-shadow: var(--wish-card-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-family: var(--font-hand);
+  font-size: 22px;
+  text-align: center;
+  color: var(--text-2);
+}
 .wish-spacer { flex-grow: 1; }
 
 .wish-nav {
@@ -146,4 +201,202 @@
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* ───────── Шторка вибору дати (MonthDatePicker) ───────── */
+.date-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(4, 3, 15, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+@media (min-width: 600px) {
+  .date-picker-backdrop {
+    align-items: center;
+  }
+}
+
+.date-picker-sheet {
+  position: relative;
+  width: 100%;
+  max-width: var(--column);
+  background: var(--wish-card-bg);
+  border: 1px solid var(--wish-card-border);
+  box-shadow: var(--wish-card-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 20px calc(var(--safe-bottom) + 24px);
+  color: var(--text);
+  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 600px) {
+  .date-picker-sheet {
+    border-radius: 28px;
+    padding: 20px 24px 28px;
+    animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.date-picker-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--btn-border);
+  margin: 0 auto 12px;
+}
+@media (min-width: 600px) {
+  .date-picker-handle {
+    display: none;
+  }
+}
+
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.date-picker-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.date-picker-title {
+  font-family: var(--font-head);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+.theme-morning .date-picker-title {
+  color: #3A1F3A;
+}
+.date-picker-sub {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+}
+.date-picker-close {
+  width: 36px;
+  height: 36px;
+}
+
+.date-quick-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.date-quick-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  border-radius: 21px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-fg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.date-quick-btn:hover {
+  background: color-mix(in srgb, var(--btn-bg) 60%, var(--accent) 22%);
+}
+.date-quick-btn.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.date-quick-sub {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.date-grid-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 6px;
+}
+.date-weekday {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.date-cell {
+  aspect-ratio: 1;
+  max-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0.25;
+  cursor: default;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+}
+.date-cell.blank {
+  pointer-events: none;
+}
+.date-cell.has-wish {
+  opacity: 1;
+  color: var(--text);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  cursor: pointer;
+}
+.theme-morning .date-cell.has-wish {
+  color: var(--text);
+}
+.date-cell.has-wish:hover {
+  background: color-mix(in srgb, var(--btn-bg) 50%, var(--accent) 30%);
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+.date-cell.current {
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  border-color: var(--accent) !important;
+  font-weight: 700;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes popIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }

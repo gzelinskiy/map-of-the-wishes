@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { formatDate, formatFull, isWishType, type WishType } from '@nebo/shared';
 import { useIndex } from '../lib/IndexContext.tsx';
 import { useTheme } from '../lib/hooks.ts';
 import { buildMapLayout, nearestStop, MAP_W, type MapLayout, type MapStop } from '../lib/mapPath.ts';
 import { mulberry32, range, round } from '../lib/prng.ts';
-import { Birds, Clouds, genClouds, genStars, Glints, Motes, RisingSun, ShootingStars, spread, StarField, useDensity } from '../components/skies.tsx';
+import { Birds, Clouds, genClouds, genHearts, genStars, Glints, Hearts, Motes, RisingSun, ShootingStars, spread, StarField, useDensity } from '../components/skies.tsx';
 import { mapSkyBox, useViewportSize } from '../lib/viewport.ts';
-import { IconBack, IconMoon, IconSun, starPath, rayPath } from '../components/glyphs.tsx';
+import { heartPath, IconBack, IconMoon, IconSun, starPath, rayPath } from '../components/glyphs.tsx';
+import { MonthDatePicker } from '../components/MonthDatePicker.tsx';
 
 const NIGHT_R = [1.3, 1.6, 1.9];
 const DAWN_R = [1.8, 2.2, 2.6];
@@ -23,9 +24,11 @@ const NightScenery = ({ layout, Wu }: { layout: MapLayout } & Box) => {
   const d = useDensity();
   const H = layout.height;
   const stars = useMemo(() => genStars(31, Math.round((H / 844) * 85 * d * spread(Wu)), Wu, H), [H, d, Wu]);
+  const hearts = useMemo(() => genHearts(44, Math.max(3, Math.round((H / 844) * 3)), Wu, 150, H - 260), [H, Wu]);
   return (
     <>
       <StarField stars={stars} />
+      <Hearts items={hearts} fill="#F6C87A" />
       {d >= 0.55 && <ShootingStars count={3} W={Wu} />}
     </>
   );
@@ -35,12 +38,14 @@ const DawnScenery = ({ layout, Wu, xOff }: { layout: MapLayout } & Box) => {
   const d = useDensity();
   const H = layout.height;
   const clouds = useMemo(() => genClouds(13, H - 420, Math.max(5, Math.round(H / 260)), 240, Wu), [H, Wu]);
+  const hearts = useMemo(() => genHearts(45, Math.max(3, Math.round((H / 844) * 3)), Wu, 320, H - 300), [H, Wu]);
   return (
     <>
       <Clouds items={clouds} W={Wu} />
       <Birds seed={2} n={Math.round(4 * d) || 1} y0={300} y1={520} color="#4E2C49" W={Wu} />
       <Birds seed={8} n={Math.round(3 * d) || 1} y0={Math.max(700, H * 0.55)} y1={Math.max(760, H * 0.6)} color="#6B3A55" W={Wu} />
       <Motes seed={6} n={Math.round((H / 844) * 16 * d)} y0={300} y1={H - 200} W={Wu} />
+      <Hearts items={hearts} fill="#C2555E" />
       <Glints seed={12} n={Math.round(8 * d)} cx={xOff + 210} cy={layout.hillsY + 60} />
     </>
   );
@@ -77,6 +82,14 @@ const Hills = ({ type, y0, H, Wu, xOff }: { type: WishType; y0: number; H: numbe
         <path d={`M246 ${y0 + 14} L246 ${y0 - 4} L262 ${y0 - 18} L278 ${y0 - 4} L278 ${y0 + 14}Z`} fill={front} />
         <rect x="268" y={y0 - 20} width="5" height="10" fill={front} />
         <rect x="256" y={y0 - 2} width="8" height="8" rx="1" fill={win} />
+        {/* замість димку — сердечка з комина */}
+        {[0, -3.1, -6.2].map((delay, i) => (
+          <path
+            key={i} className="mote" d={heartPath(270.5, y0 - 28 - i * 4, 5.5 + i * 1.1)}
+            fill={win} opacity="0.9"
+            style={{ animationDuration: `${9 + i * 1.6}s`, animationDelay: `${delay}s` }}
+          />
+        ))}
       </g>
       <path d={frontD} fill={front} />
       {night && flies.map((f, i) => (
@@ -153,6 +166,7 @@ const MapInner = ({ type }: { type: WishType }) => {
   const wrap = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const vp = useViewportSize();
+  const [activeMonthKey, setActiveMonthKey] = useState<string | null>(null);
   useTheme(type);
 
   const dates = idx[type];
@@ -186,7 +200,7 @@ const MapInner = ({ type }: { type: WishType }) => {
   // тап по карті → найближча точка; клавіатура → прямо по посиланню
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     const t = e.target as Element;
-    if (t.closest('.map-header, .map-pill, .map-hero-label')) return;
+    if (t.closest('.map-header, .map-pill, .map-hero-label, .date-picker-backdrop')) return;
     const link = t.closest<SVGAElement>('a[data-date]');
     if (link) e.preventDefault();
     if (e.detail === 0 && link) return go(link.dataset.date!);
@@ -231,7 +245,7 @@ const MapInner = ({ type }: { type: WishType }) => {
               <Link to="/" viewTransition aria-label="На головну" className="circle-btn press"><IconBack /></Link>
               <div className="map-title">
                 <h1>{night ? 'Карта зоряних ночей' : 'Карта світанків'}</h1>
-                <div className="map-sub">{night ? 'кожна зірка — одне побажання на ніч' : 'кожне сонечко — одне побажання на ранок'}</div>
+                <div className="map-sub">{night ? 'Зірок багато, але найяскравіша – ти, Ксюш ❤️' : 'Найтепліше сонечко звуть Оксанка 🥰'}</div>
               </div>
             </div>
             <nav className="seg" aria-label="Категорія">
@@ -250,28 +264,38 @@ const MapInner = ({ type }: { type: WishType }) => {
           )}
 
           {layout.months.map((m, i) => (
-            <Link
-              key={m.key} to={`/${type}/${m.firstDate}`} viewTransition data-side={m.pill}
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => setActiveMonthKey(m.key)}
+              data-side={m.pill}
               className="map-pill up press"
               style={{
                 left: pct(m.pill === 'right' ? m.x + 26 : m.x - 26, W), top: pct(m.y, H),
                 animationDelay: `${0.6 + i * 0.35}s`,
               }}
-              aria-label={`${m.name}: ${m.label}, від ${formatDate(m.firstDate)}`}
+              aria-label={`${m.name}: ${m.label}`}
             >
               <span className="map-pill-name">{m.name}</span>
               <span className="map-pill-count">{m.label}</span>
-            </Link>
+            </button>
           ))}
 
           {first && (
             <div className="map-start up" style={{ top: pct(layout.hillsY + 30, H), animationDelay: '1.5s' }}>
               <div className="map-start-title">тут усе почалося</div>
-              <div className="map-start-sub">{night ? 'перша добраніч' : 'перший добрий ранок'} · {formatFull(first)}</div>
+              <div className="map-start-sub">{night ? 'першe побажання доброї ночі' : 'перше побажання доброго ранку'} · {formatFull(first)}</div>
             </div>
           )}
         </div>
       </div>
+
+      <MonthDatePicker
+        type={type}
+        monthKey={activeMonthKey ?? ''}
+        isOpen={!!activeMonthKey}
+        onClose={() => setActiveMonthKey(null)}
+      />
     </div>
   );
 };

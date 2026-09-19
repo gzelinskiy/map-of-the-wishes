@@ -7,6 +7,16 @@ export const starPath = (cx: number, cy: number, R: number, c = 0.28): string =>
   return `M${cx} ${cy - R} Q${round(cx + k, 2)} ${round(cy - k, 2)} ${cx + R} ${cy} Q${round(cx + k, 2)} ${round(cy + k, 2)} ${cx} ${cy + R} Q${round(cx - k, 2)} ${round(cy + k, 2)} ${cx - R} ${cy} Q${round(cx - k, 2)} ${round(cy - k, 2)} ${cx} ${cy - R}Z`;
 };
 
+/** Сердечко з центром (cx, cy); s — приблизно піврозмір. */
+export const heartPath = (cx: number, cy: number, s: number): string => {
+  const n = (v: number) => round(v, 2);
+  return (
+    `M${n(cx)} ${n(cy + s * 0.78)}` +
+    ` C${n(cx - s * 1.15)} ${n(cy + s * 0.05)} ${n(cx - s * 0.6)} ${n(cy - s * 0.85)} ${n(cx)} ${n(cy - s * 0.22)}` +
+    ` C${n(cx + s * 0.6)} ${n(cy - s * 0.85)} ${n(cx + s * 1.15)} ${n(cy + s * 0.05)} ${n(cx)} ${n(cy + s * 0.78)}Z`
+  );
+};
+
 /** Промені навколо центра: n штук від r1 до r2. */
 export const rayPath = (cx: number, cy: number, r1: number, r2: number, n: number, offset = 0): string => {
   let d = '';
@@ -44,6 +54,13 @@ export const IconSun = ({ size = 20 }: { size?: number }) => (
 export const IconShuffle = ({ size = 18 }: { size?: number }) => (
   <Icon size={size}><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" {...stroke(1.8)} /></Icon>
 );
+export const IconClose = ({ size = 20 }: { size?: number }) => (
+  <Icon size={size}><path d="M18 6L6 18M6 6l12 12" {...stroke(1.9)} /></Icon>
+);
+export const IconChevronDown = ({ size = 16 }: { size?: number }) => (
+  <Icon size={size}><path d="M6 9l6 6 6-6" {...stroke(2)} /></Icon>
+);
+
 
 type Delay = CSSProperties & Record<string, string | number>;
 

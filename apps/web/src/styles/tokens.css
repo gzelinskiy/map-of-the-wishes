@@ -2,7 +2,7 @@
   --font-ui: Manrope, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-head: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-hand: Caveat, 'Segoe Script', cursive;
-  --font-text: Lora, Georgia, 'Times New Roman', serif;
+  --font-text: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
 
   --column: 480px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -33,6 +33,10 @@
   --route: #F6C87A;
   --start-title: #FBE7C8;
   --start-sub: #D9CFE8;
+  --wish-card-bg: rgba(12, 10, 36, 0.65);
+  --wish-card-border: rgba(255, 244, 220, 0.16);
+  --wish-card-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 244, 220, 0.2);
+  --wish-text-color: #FBF3E2;
 }
 
 /* Ранок */
@@ -59,4 +63,8 @@
   --route: #B8506A;
   --start-title: #FFF4E0;
   --start-sub: #FCE9DA;
+  --wish-card-bg: rgba(255, 252, 247, 0.72);
+  --wish-card-border: rgba(255, 255, 255, 0.75);
+  --wish-card-shadow: 0 14px 36px rgba(94, 31, 62, 0.1), 0 2px 8px rgba(94, 31, 62, 0.04);
+  --wish-text-color: #2A1F3D;
 }

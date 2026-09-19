@@ -78,3 +78,26 @@ Paragraphs are separated by empty lines. Exact send time is neither stored nor d
 ## Mobile Reliability Features
 
 `viewport-fit=cover` + safe-area insets; `100dvh` with fallback; background rendered as a dedicated `position: fixed` layer; horizontal swipe built on Pointer Events (leaves vertical scroll untouched, preserves screen edges for system "swipe-to-go-back" gestures); self-hosted fonts (Latin + Cyrillic); reduced animated particles on low-power devices; canvas animations paused when the tab is in the background (`document.hidden`); `prefers-reduced-motion` compliance; View Transitions with feature detection.
+
+## Troubleshooting
+
+### "Це посилання більше не діє" (Link expired or invalid) on unlock
+
+If opening an unlock link (`/unlock?k=...`) redirects to `/locked?bad=1` and shows *"Це посилання більше не діє"*:
+
+1. **`DATA_DIR` path resolution mismatch (cwd discrepancy):**
+   - By default, `.env` defines `DATA_DIR=./data`.
+   - When the backend is run via `npm run dev:server` (which runs `npm run dev -w @nebo/server`), npm sets the process working directory to `apps/server/`. Consequently, relative path `./data` resolves to `apps/server/data/`.
+   - Meanwhile, running `scripts/make-key.ts` or `scripts/import-oksana.ts` from the root directory resolves `./data` to the repo root `data/` (`data/access/keys.json` and `data/wishes/`).
+   - As a result, the server checks an empty `apps/server/data/access/keys.json` and rejects the key.
+   - **Fix:** Ensure both the server and CLI tools point to the same data directory. You can set an absolute path for `DATA_DIR` in `.env`, run the server from the repo root, or remove any duplicate `apps/server/data` folder.
+
+2. **Missing `.env` when creating keys via CLI:**
+   - Running `scripts/make-key.ts` directly without `--env-file=.env` will fail because `COOKIE_SECRET` (and `DATA_DIR`) are missing from `process.env`.
+   - Always run key generation with `.env` loaded from the project root:
+     ```bash
+     node --env-file=.env node_modules/.bin/tsx scripts/make-key.ts "Label"
+     # or:
+     npx tsx --env-file=.env scripts/make-key.ts "Label"
+     ```
+   - If an ad-hoc `COOKIE_SECRET="..."` was passed inline without `DATA_DIR`, verify that the key was saved to the same `data/access/keys.json` directory monitored by your active server instance.
